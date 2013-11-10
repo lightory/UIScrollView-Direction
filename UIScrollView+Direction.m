@@ -25,15 +25,11 @@
 
 
 @interface UIScrollView ()
-@property (strong, nonatomic) NSNumber *lastContentOffsetX;
-@property (strong, nonatomic) NSNumber *lastContentOffsetY;
 @property (assign, nonatomic) UIScrollViewDirection horizontalScrollingDirection;
 @property (assign, nonatomic) UIScrollViewDirection verticalScrollingDirection;
 @end
 
 
-static const char lastContentOffsetXKey;
-static const char lastContentOffsetYKey;
 static const char horizontalScrollingDirectionKey;
 static const char verticalScrollingDirectionKey;
 
@@ -42,7 +38,7 @@ static const char verticalScrollingDirectionKey;
 
 - (void)startObservingDirection
 {
-    [self addObserver:self forKeyPath:@"contentOffset" options:NSKeyValueObservingOptionNew context:nil];
+    [self addObserver:self forKeyPath:@"contentOffset" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
 }
 
 - (void)stopObservingDirection
@@ -54,49 +50,27 @@ static const char verticalScrollingDirectionKey;
 {
     if (![keyPath isEqualToString:@"contentOffset"]) return;
     
-    CGPoint contentOffset = [[change valueForKey:NSKeyValueChangeNewKey] CGPointValue];
+    CGPoint newContentOffset = [[change valueForKey:NSKeyValueChangeNewKey] CGPointValue];
+    CGPoint oldContentOffset = [[change valueForKey:NSKeyValueChangeOldKey] CGPointValue];
 
-    if (lastContentOffsetXKey < contentOffset.x) {
+    if (oldContentOffset.x < newContentOffset.x) {
         self.horizontalScrollingDirection = UIScrollViewDirectionRight;
-    } else if (lastContentOffsetXKey > contentOffset.x) {
+    } else if (oldContentOffset.x > newContentOffset.x) {
         self.horizontalScrollingDirection = UIScrollViewDirectionLeft;
     } else {
         self.horizontalScrollingDirection = UIScrollViewDirectionNone;
     }
     
-    if (lastContentOffsetYKey < contentOffset.y) {
+    if (oldContentOffset.y < newContentOffset.y) {
         self.verticalScrollingDirection = UIScrollViewDirectionDown;
-    } else if (lastContentOffsetYKey > contentOffset.y) {
+    } else if (oldContentOffset.y > newContentOffset.y) {
         self.verticalScrollingDirection = UIScrollViewDirectionUp;
     } else {
         self.verticalScrollingDirection = UIScrollViewDirectionNone;
     }
-    
-    self.lastContentOffsetX = [NSNumber numberWithDouble:contentOffset.x];
-    self.lastContentOffsetY = [NSNumber numberWithDouble:contentOffset.y];
 }
 
 #pragma mark - Properties
-- (NSNumber *)lastContentOffsetX
-{
-    return objc_getAssociatedObject(self, (void *)&lastContentOffsetXKey);
-}
-
-- (void)setLastContentOffsetX:(NSNumber *)lastContentOffsetX
-{
-    objc_setAssociatedObject(self, (void *)&lastContentOffsetXKey, lastContentOffsetX, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-- (NSNumber *)lastContentOffsetY
-{
-    return objc_getAssociatedObject(self, (void *)&lastContentOffsetYKey);
-}
-
-- (void)setLastContentOffsetY:(NSNumber *)lastContentOffsetY
-{
-    objc_setAssociatedObject(self, (void *)&lastContentOffsetYKey, lastContentOffsetY, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
 - (UIScrollViewDirection)horizontalScrollingDirection
 {
     return [objc_getAssociatedObject(self, (void *)&horizontalScrollingDirectionKey) intValue];
